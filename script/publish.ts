@@ -20,7 +20,7 @@ if (!currentTipSHA.toUpperCase().startsWith(releaseSHA!.toUpperCase())) {
   console.log(
     `Current tip '${currentTipSHA}' does not match release SHA '${releaseSHA}'. Skipping publish.`
   )
-  process.exit(0)
+  // process.exit(0)
 }
 
 import * as Fs from 'fs'
@@ -31,6 +31,9 @@ import request from 'request'
 
 console.log('Packaging…')
 execSync('yarn package', { stdio: 'inherit' })
+if (1 === 1) {
+  process.exit(0)
+}
 
 const sha = platforms.getSha().substr(0, 8)
 

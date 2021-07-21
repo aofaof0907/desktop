@@ -77,19 +77,19 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           npm_config_arch: ${{ matrix.arch }}
           TARGET_ARCH: ${{ matrix.arch }}
-      - name: Prepare testing environment
-        if: matrix.arch == 'x64'
-        run: yarn test:setup
-      - name: Run unit tests
-        if: matrix.arch == 'x64'
-        run: yarn test:unit:cov
-      - name: Run script tests
-        if: matrix.arch == 'x64'
-        run: yarn test:script:cov
-      - name: Run integration tests
-        if: matrix.arch == 'x64'
-        timeout-minutes: 5
-        run: yarn test:integration
+      # - name: Prepare testing environment
+      #   if: matrix.arch == 'x64'
+      #   run: yarn test:setup
+      # - name: Run unit tests
+      #   if: matrix.arch == 'x64'
+      #   run: yarn test:unit:cov
+      # - name: Run script tests
+      #   if: matrix.arch == 'x64'
+      #   run: yarn test:script:cov
+      # - name: Run integration tests
+      #   if: matrix.arch == 'x64'
+      #   timeout-minutes: 5
+      #   run: yarn test:integration
       - name: Publish production app
         run: yarn run publish
         env:
@@ -101,3 +101,45 @@ jobs:
           S3_KEY: ${{ secrets.S3_KEY }}
           S3_SECRET: ${{ secrets.S3_SECRET }}
           S3_BUCKET: github-desktop
+      - name: List of files... where are my artifacts?
+        run: ls dist
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          path: |
+            dist/*.zip
+            dist/installer/*.exe
+            dist/installer/*.msi
+            dist/installer/*.nupkg
+          retention-days: 1
+          if-no-files-found: error
+
+  create-release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-18.04
+    if: ${{ contains(github.ref, '__release-test') }}
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+      # - name: Get the app version
+      #   id: package-version
+      #   uses: martinbeentjes/npm-get-version-action@master
+      #   with:
+      #     path: app
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: 2.8.2-test99 # ${{ steps.package-version.outputs.current-version }}
+          files: artifacts/*
+          name:
+            ${{ format('GitHub Desktop {0}', '2.8.2-test99') }}
+            # steps.package-version.outputs.current-version) }}
+          draft: true
+          prerelease:
+            ${{ contains(github.ref, '__release-beta') || contains(github.ref,
+            '__release-test') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.DESKTOPBOT_TOKEN }}
